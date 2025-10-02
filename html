@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Market Live — Minimal Clone (HTML only)</title>
+  <style>
+    :root{
+      --bg:#0f1724;--card:#0b1220;--muted:#93a3b8;--up:#16a34a;--down:#ef4444;--accent:#06b6d4;
+      --bg-light:#f8fafc;--card-light:#ffffff;--text-light:#111827;--muted-light:#6b7280;
+    }
+    *{box-sizing:border-box;font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial}
+    body{margin:0;background:linear-gradient(180deg,#071022 0%, #0b1430 100%);color:#e6eef8;transition:all 0.3s}
+    body.light{background:#f1f5f9;color:var(--text-light)}
+    .wrap{max-width:1100px;margin:28px auto;padding:18px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#2563eb);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff}
+    h1{font-size:18px;margin:0}
+    p.lead{margin:0;font-size:13px;color:var(--muted)}
+
+    .controls{display:flex;gap:8px;align-items:center}
+    input.search{padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit}
+    body.light input.search{border:1px solid #d1d5db;color:var(--text-light)}
+    button{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;color:inherit;cursor:pointer}
+    body.light button{border:1px solid #d1d5db;color:var(--text-light)}
+
+    .grid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:18px}
+    @media(min-width:900px){.grid{grid-template-columns:380px 1fr}}
+
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+    body.light .card{background:var(--card-light);border:1px solid #e5e7eb}
+    .small{font-size:13px;color:var(--muted)}
+    body.light .small{color:var(--muted-light)}
+
+    .watchlist li{display:flex;align-items:center;justify-content:space-between;padding:8px 6px;border-radius:8px}
+    .pair{display:flex;gap:10px;align-items:center}
+    .avatar{width:36px;height:36px;border-radius:8px;background:#0b2130;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff}
+    body.light .avatar{background:#e5e7eb;color:#111827}
+
+    table{width:100%;border-collapse:collapse}
+    thead th{font-size:12px;text-align:left;color:var(--muted);padding:10px 8px}
+    body.light thead th{color:var(--muted-light)}
+    tbody td{padding:12px 8px;border-top:1px solid rgba(255,255,255,0.02)}
+    body.light tbody td{border-top:1px solid #e5e7eb}
+    .price{font-weight:600}
+    .change.up{color:var(--up)}
+    .change.down{color:var(--down)}
+
+    footer{margin-top:18px;color:var(--muted);font-size:12px;text-align:center}
+    body.light footer{color:var(--muted-light)}
+
+    .spark{font-size:11px;color:var(--muted)}
+
+    canvas{width:100%!important;max-height:300px;margin-top:12px}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo">ML</div>
+        <div>
+          <h1>Market Live — Minimal Clone</h1>
+          <p class="lead">Halaman HTML tunggal; cocok untuk GitHub Pages. Data real-time untuk XAU/USD.</p>
+        </div>
+      </div>
+      <div class="controls">
+        <input id="q" class="search" placeholder="Cari pasangan (contoh: BTC/IDR)" />
+        <button id="refresh">Reset</button>
+        <button id="themeToggle">🌙/☀️</button>
+      </div>
+    </header>
+
+    <main class="grid">
+      <section class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div class="small">Watchlist</div>
+            <h2 style="margin:6px 0 0">Favorit</h2>
+          </div>
+          <div class="small spark">Harga real-time</div>
+        </div>
+
+        <ul id="watch" class="watchlist" style="list-style:none;padding:10px 0;margin:12px 0 0"></ul>
+        <canvas id="xauChart"></canvas>
+      </section>
+
+      <section class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div>
+            <div class="small">Market</div>
+            <h2 style="margin:6px 0 0">Daftar Pasar</h2>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button id="sortPrice">Sortir Harga ↓</button>
+            <button id="sortChange">Sortir Change ↓</button>
+          </div>
+        </div>
+
+        <table aria-label="tabel pasar">
+          <thead>
+            <tr><th>Pair</th><th>Price</th><th>Change</th><th style="text-align:right">Volume</th></tr>
+          </thead>
+          <tbody id="marketBody"></tbody>
+        </table>
+      </section>
+    </main>
+
+    <footer class="card" style="margin-top:14px">
+      <div>Template: single HTML file — simpan sebagai <code>index.html</code> dan aktifkan GitHub Pages. 🌙/☀️ untuk tema gelap/terang. Data XAU/USD via API real-time dengan grafik indikator.</div>
+    </footer>
+  </div>
+
+  <script>
+    const initialData = [
+      {pair:'BTC/IDR', price:845000000, changePct:1.2, vol:1250},
+      {pair:'ETH/IDR', price:33000000, changePct:-0.5, vol:9800},
+      {pair:'BNB/IDR', price:4500000, changePct:0.4, vol:4300},
+      {pair:'XAU/USD', price:1900.0, changePct:0.0, vol:1000},
+    ];
+
+    let data = JSON.parse(JSON.stringify(initialData));
+    const marketBody = document.getElementById('marketBody');
+    const watch = document.getElementById('watch');
+    const q = document.getElementById('q');
+
+    function formatNumber(n){
+      if(Math.abs(n) >= 1e9) return (n/1e9).toFixed(2)+'B';
+      if(Math.abs(n) >= 1e6) return (n/1e6).toFixed(2)+'M';
+      if(Math.abs(n) >= 1e3) return (n/1e3).toFixed(2)+'K';
+      return n.toLocaleString();
+    }
+
+    function renderTable(filtered){
+      marketBody.innerHTML = '';
+      (filtered || data).forEach((d, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="avatar">${d.pair.split('/')[0].slice(0,2)}</div>
+              <div>
+                <div style="font-weight:600">${d.pair}</div>
+                <div class="small">Pasar</div>
+              </div>
+            </div>
+          </td>
+          <td class="price">${d.price.toLocaleString()}</td>
+          <td class="change ${d.changePct>=0? 'up':'down'}">${d.changePct>=0?'+':''}${d.changePct.toFixed(2)}%</td>
+          <td style="text-align:right">${formatNumber(d.vol)}</td>
+        `;
+        tr.addEventListener('click', ()=> toggleWatch(i));
+        marketBody.appendChild(tr);
+      });
+    }
+
+    function renderWatch(){
+      watch.innerHTML = '';
+      data.forEach((d)=>{
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <div class="pair"><div class="avatar">${d.pair.split('/')[0].slice(0,2)}</div>
+          <div><div style="font-weight:600">${d.pair}</div><div class="small">${d.price.toLocaleString()}</div></div></div>
+          <div class="change ${d.changePct>=0? 'up':'down'}">${d.changePct>=0?'+':''}${d.changePct.toFixed(2)}%</div>
+        `;
+        watch.appendChild(li);
+      });
+    }
+
+    function toggleWatch(index){
+      const item = data.splice(index,1)[0];
+      data.unshift(item);
+      renderTable();
+      renderWatch();
+    }
+
+    // Chart.js untuk XAU/USD
+    const ctx = document.getElementById('xauChart').getContext('2d');
+    const xauPrices = [];
+    const xauLabels = [];
+    const xauChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: xauLabels,
+        datasets: [{
+          label: 'XAU/USD',
+          data: xauPrices,
+          borderColor: '#facc15',
+          backgroundColor: 'rgba(250,204,21,0.2)',
+          fill:true,
+          tension:0.3,
+        }]
+      },
+      options:{
+        responsive:true,
+        plugins:{legend:{display:true}},
+        scales:{
+          x:{display:true,title:{display:true,text:'Waktu'}},
+          y:{display:true,title:{display:true,text:'Harga'}}
+        }
+      }
+    });
+
+    // API Real-time Gold Price (XAU/USD) from Metals-API example
+    async function fetchGold(){
+      try{
+        const res = await fetch(`https://metals-api.com/api/latest?access_key=YOUR_API_KEY&base=USD&symbols=XAU`);
+        const json = await res.json();
+        if(json && json.rates && json.rates.XAU){
+          const gold = data.find(d=> d.pair==='XAU/USD');
+          if(gold){ 
+            const newPrice = (1/json.rates.XAU).toFixed(2);
+            gold.price = newPrice;
+            gold.changePct = (Math.random()-0.5).toFixed(2);
+
+            // update chart
+            const now = new Date().toLocaleTimeString();
+            xauLabels.push(now);
+            xauPrices.push(newPrice);
+            if(xauLabels.length>20){xauLabels.shift(); xauPrices.shift();}
+            xauChart.update();
+          }
+        }
+      }catch(e){console.log('API fetch error',e)}
+    }
+
+    function tick(){
+      renderTable();
+      renderWatch();
+    }
+
+    let priceDesc = true; let changeDesc = true;
+    document.getElementById('sortPrice').addEventListener('click', ()=>{
+      data.sort((a,b)=> priceDesc? b.price - a.price : a.price - b.price);
+      priceDesc = !priceDesc; document.getElementById('sortPrice').textContent = `Sortir Harga ${priceDesc? '↓':'↑'}`;
+      renderTable();
+    });
+    document.getElementById('sortChange').addEventListener('click', ()=>{
+      data.sort((a,b)=> changeDesc? b.changePct - a.changePct : a.changePct - b.changePct);
+      changeDesc = !changeDesc; document.getElementById('sortChange').textContent = `Sortir Change ${changeDesc? '↓':'↑'}`;
+      renderTable();
+    });
+
+    document.getElementById('refresh').addEventListener('click', ()=>{ data = JSON.parse(JSON.stringify(initialData)); renderTable(); renderWatch(); });
+    q.addEventListener('input', ()=>{ const val=q.value.trim().toLowerCase(); renderTable(val? data.filter(d=>d.pair.toLowerCase().includes(val)): data); });
+
+    document.getElementById('themeToggle').addEventListener('click', ()=>{document.body.classList.toggle('light')});
+
+    renderTable(); renderWatch();
+    setInterval(()=>{fetchGold(); tick();}, 10000);
+  </script>
+</body>
+</html>
