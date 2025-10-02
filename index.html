@@ -51,10 +51,7 @@
     body.light footer{color:var(--muted-light)}
 
     .spark{font-size:11px;color:var(--muted)}
-
-    canvas{width:100%!important;max-height:300px;margin-top:12px}
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div class="wrap">
@@ -84,7 +81,6 @@
         </div>
 
         <ul id="watch" class="watchlist" style="list-style:none;padding:10px 0;margin:12px 0 0"></ul>
-        <canvas id="xauChart"></canvas>
       </section>
 
       <section class="card">
@@ -109,7 +105,7 @@
     </main>
 
     <footer class="card" style="margin-top:14px">
-      <div>Template: single HTML file — simpan sebagai <code>index.html</code> dan aktifkan GitHub Pages. 🌙/☀️ untuk tema gelap/terang. Data XAU/USD via API real-time dengan grafik indikator.</div>
+      <div>Template: single HTML file — simpan sebagai <code>index.html</code> dan aktifkan GitHub Pages. 🌙/☀️ untuk tema gelap/terang. Data XAU/USD via API real-time.</div>
     </footer>
   </div>
 
@@ -176,52 +172,15 @@
       renderWatch();
     }
 
-    // Chart.js untuk XAU/USD
-    const ctx = document.getElementById('xauChart').getContext('2d');
-    const xauPrices = [];
-    const xauLabels = [];
-    const xauChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: xauLabels,
-        datasets: [{
-          label: 'XAU/USD',
-          data: xauPrices,
-          borderColor: '#facc15',
-          backgroundColor: 'rgba(250,204,21,0.2)',
-          fill:true,
-          tension:0.3,
-        }]
-      },
-      options:{
-        responsive:true,
-        plugins:{legend:{display:true}},
-        scales:{
-          x:{display:true,title:{display:true,text:'Waktu'}},
-          y:{display:true,title:{display:true,text:'Harga'}}
-        }
-      }
-    });
-
     // API Real-time Gold Price (XAU/USD) from Metals-API example
     async function fetchGold(){
       try{
+        // Example: https://metals-api.com (free registration required)
         const res = await fetch(`https://metals-api.com/api/latest?access_key=YOUR_API_KEY&base=USD&symbols=XAU`);
         const json = await res.json();
         if(json && json.rates && json.rates.XAU){
           const gold = data.find(d=> d.pair==='XAU/USD');
-          if(gold){ 
-            const newPrice = (1/json.rates.XAU).toFixed(2);
-            gold.price = newPrice;
-            gold.changePct = (Math.random()-0.5).toFixed(2);
-
-            // update chart
-            const now = new Date().toLocaleTimeString();
-            xauLabels.push(now);
-            xauPrices.push(newPrice);
-            if(xauLabels.length>20){xauLabels.shift(); xauPrices.shift();}
-            xauChart.update();
-          }
+          if(gold){ gold.price = (1/json.rates.XAU).toFixed(2); gold.changePct = (Math.random()-0.5).toFixed(2); }
         }
       }catch(e){console.log('API fetch error',e)}
     }
